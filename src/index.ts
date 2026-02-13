@@ -1,5 +1,6 @@
 class BBImg extends HTMLElement {
   private observer: IntersectionObserver | null = null;
+  private resizeObserver: ResizeObserver | null = null;
   private img: HTMLImageElement | null = null;
   private isLoaded = false;
   private loadId = 0;
@@ -22,6 +23,7 @@ class BBImg extends HTMLElement {
     this.parseAspectRatio();
     this.render();
     this.setupLazyLoading();
+    this.setupResizeObserver();
   }
 
   disconnectedCallback() {
@@ -32,6 +34,10 @@ class BBImg extends HTMLElement {
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
     }
     if (this.img) {
       this.img.onload = null;
@@ -51,36 +57,65 @@ class BBImg extends HTMLElement {
 
   /**
    * 标准化 max-width 值：纯数字默认转为 px
-   * "500" -> "500px", "100%" -> "100%", "800px" -> "800px"
    */
   private normalizeMaxWidth(value: string | null): string {
     if (!value) return '100%';
-    // 如果是纯数字（整数或小数），添加 px 单位
     if (/^\d+(\.\d+)?$/.test(value.trim())) {
       return `${value}px`;
     }
     return value;
   }
 
-  private getMinHeight(): string {
-    const rawMaxWidth = this.getAttribute('max-width');
-    const maxWidth = this.normalizeMaxWidth(rawMaxWidth);
+  /**
+   * 根据实际容器宽度计算最小高度
+   */
+  private calculateMinHeight(actualWidth: number): string {
+    return `${actualWidth / this.aspectRatio}px`;
+  }
+
+  /**
+   * 更新容器的 min-height 基于实际渲染宽度
+   */
+  private updateMinHeight() {
+    const container = this.container;
+    if (!container || this.isLoaded) return;
+
+    // 获取实际渲染宽度
+    const rect = container.getBoundingClientRect();
+    const actualWidth = rect.width;
     
-    // 如果是百分比，使用视口宽度计算最小高度
-    if (maxWidth.endsWith('%')) {
-      const percent = parseFloat(maxWidth) / 100;
-      const vwHeight = (100 * percent) / this.aspectRatio;
-      return `min(${vwHeight}vw, ${300 / this.aspectRatio}px)`; // 设置上限防止过大
+    if (actualWidth > 0) {
+      const minHeight = this.calculateMinHeight(actualWidth);
+      container.style.minHeight = minHeight;
     }
-    
-    // 如果是 px 或其他单位，直接计算
-    if (maxWidth.endsWith('px')) {
-      const width = parseFloat(maxWidth);
-      return `${width / this.aspectRatio}px`;
+  }
+
+  /**
+   * 设置 ResizeObserver 监听容器宽度变化
+   */
+  private setupResizeObserver() {
+    if (!('ResizeObserver' in window)) {
+      // 降级：初始化时计算一次
+      this.updateMinHeight();
+      return;
     }
-    
-    // 默认使用 vw 计算，确保有最小高度
-    return `${100 / this.aspectRatio}vw`;
+
+    const container = this.container;
+    if (!container) return;
+
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect) {
+          const width = entry.contentRect.width;
+          if (width > 0 && !this.isLoaded) {
+            const minHeight = this.calculateMinHeight(width);
+            container.style.minHeight = minHeight;
+          }
+        }
+      }
+    });
+
+    this.resizeObserver.observe(container);
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
@@ -98,7 +133,8 @@ class BBImg extends HTMLElement {
         break;
       case 'max-width':
         this.updateMaxWidth(newValue);
-        this.updateMinHeight();
+        // 宽度属性变化时，等待布局完成后重新计算高度
+        requestAnimationFrame(() => this.updateMinHeight());
         break;
       case 'aspect-ratio':
         this.parseAspectRatio();
@@ -123,18 +159,11 @@ class BBImg extends HTMLElement {
     }
   }
 
-  private updateMinHeight() {
-    const container = this.container;
-    if (container) {
-      const minHeight = this.getMinHeight();
-      container.style.minHeight = minHeight;
-    }
-  }
-
   private updateAspectRatio() {
     const container = this.container;
     if (container) {
       container.style.aspectRatio = `${this.aspectRatio}`;
+      // 比例变化时重新计算高度
       this.updateMinHeight();
     }
   }
@@ -154,6 +183,8 @@ class BBImg extends HTMLElement {
     if (container) {
       container.classList.remove('loaded');
       container.style.backgroundColor = this.getAttribute('placeholder') || '#f5f5f5';
+      // 重置时清除 min-height，等待 ResizeObserver 重新计算
+      container.style.minHeight = '';
     }
 
     if (this.observer) {
@@ -167,7 +198,6 @@ class BBImg extends HTMLElement {
     const placeholderColor = this.getAttribute('placeholder') || '#f5f5f5';
     const rawMaxWidth = this.getAttribute('max-width');
     const maxWidth = this.normalizeMaxWidth(rawMaxWidth);
-    const minHeight = this.getMinHeight();
 
     this.style.maxWidth = maxWidth;
     this.style.display = 'block';
@@ -187,11 +217,10 @@ class BBImg extends HTMLElement {
           width: 100%;
           max-width: ${maxWidth};
           aspect-ratio: ${this.aspectRatio};
-          min-height: ${minHeight}; /* 关键修复：确保加载前高度不为0 */
+          /* min-height 由 JS 根据实际宽度动态计算 */
           background-color: ${placeholderColor};
           overflow: hidden;
           margin: 0 auto;
-          /* 极淡的骨架屏：几乎不可察觉 */
           transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
@@ -239,7 +268,6 @@ class BBImg extends HTMLElement {
           height: 100%;
           object-fit: cover;
           opacity: 0;
-          /* 更长的过渡时间，更自然的缓动 */
           transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1),
                       transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
           transform: scale(1.02);
@@ -329,6 +357,8 @@ class BBImg extends HTMLElement {
 
       this.img!.classList.add('loaded');
       this.container?.classList.add('loaded');
+      // 图片加载完成后，可以清除 min-height 让 aspect-ratio 接管
+      // 但保留也无妨，因为实际内容高度应该一致
     };
 
     this.img.onerror = () => {
