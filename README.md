@@ -1,31 +1,14 @@
 # bb-img
 
-A lightweight, lazy-loading image web component with automatic placeholder.
+Lightweight lazy-loading image component. Subtle placeholder, smooth transition.
 
-## Features
-
-- 🚀 Lazy loading by default using IntersectionObserver
-- 🎨 Light gray placeholder with 2:3 aspect ratio while loading
-- 🔄 Smooth fade-in transition when image loads
-- 📦 Minimal and lightweight
-- 💪 Built with TypeScript
-- 🌐 Works with npm or CDN
-
-## Installation
-
-### Via npm
+## Install
 
 ```bash
 npm install @bbki.ng/bbimg
 ```
 
-Then import in your JavaScript/TypeScript:
-
-```javascript
-import '@bbki.ng/bbimg';
-```
-
-### Via CDN
+CDN:
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/@bbki.ng/bbimg@latest/dist/index.js"></script>
@@ -33,13 +16,29 @@ import '@bbki.ng/bbimg';
 
 ## Usage
 
-Simply use the `<bb-img>` custom element with a `src` attribute:
-
 ```html
-<bb-img src="path/to/your/image.jpg"></bb-img>
+<bb-img src="image.jpg" alt="Description"></bb-img>
 ```
 
-### Example
+## Attributes
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `src` | required | Image URL |
+| `alt` | "" | Accessibility text |
+| `max-width` | "100%" | CSS max-width value |
+| `placeholder` | "#f5f5f5" | Loading background color |
+| `root-margin` | "50px" | Preload distance |
+
+## Features
+
+- IntersectionObserver lazy loading
+- 3% opacity skeleton animation
+- 1.2s cubic-bezier fade transition
+- Race condition protection
+- Zero dependencies
+
+## Example
 
 ```html
 <!DOCTYPE html>
@@ -48,51 +47,18 @@ Simply use the `<bb-img>` custom element with a `src` attribute:
   <script type="module" src="https://cdn.jsdelivr.net/npm/@bbki.ng/bbimg@latest/dist/index.js"></script>
 </head>
 <body>
-  <bb-img src="https://picsum.photos/400/600"></bb-img>
+  <bb-img src="image.jpg" max-width="800px"></bb-img>
 </body>
 </html>
 ```
 
-## How it Works
-
-1. **Placeholder**: Shows a light gray box with 2:3 aspect ratio before the image loads
-2. **Lazy Loading**: Uses IntersectionObserver to only load images when they're about to enter the viewport
-3. **Fade-in**: Smoothly transitions from placeholder to the actual image
-4. **Fallback**: Falls back to immediate loading if IntersectionObserver is not supported
-
-## Browser Support
-
-Works in all modern browsers that support:
-- Custom Elements (Web Components)
-- Shadow DOM
-- IntersectionObserver (with graceful fallback)
+See `example/` directory for full demo.
 
 ## Development
 
 ```bash
-# Install dependencies
-npm install
-
-# Build the component
-npm run prepare
-
-# Watch mode for development
-npm start
-```
-
-## Example
-
-Check out the `example` directory for a live demo showing various use cases including:
-- Single image display
-- Grid layouts
-- Lazy loading demonstration
-
-To run the example locally:
-
-```bash
 npm install
 npm run prepare
-# Then open example/index.html in your browser
 ```
 
 ## License
