@@ -1,6 +1,6 @@
 {
   "name": "@bbki.ng/bbimg",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A lazy-loading image web component",
   "main": "dist/index.js",
   "type": "module",
