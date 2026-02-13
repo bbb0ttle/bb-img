@@ -3,9 +3,10 @@ class BBImg extends HTMLElement {
   private img: HTMLImageElement | null = null;
   private isLoaded = false;
   private loadId = 0;
+  private aspectRatio: number = 3 / 2; // 默认 3:2
 
   static get observedAttributes() {
-    return ['src', 'alt', 'placeholder', 'max-width', 'root-margin'];
+    return ['src', 'alt', 'placeholder', 'max-width', 'root-margin', 'aspect-ratio'];
   }
 
   constructor() {
@@ -18,6 +19,7 @@ class BBImg extends HTMLElement {
   }
 
   connectedCallback() {
+    this.parseAspectRatio();
     this.render();
     this.setupLazyLoading();
   }
@@ -37,6 +39,50 @@ class BBImg extends HTMLElement {
     }
   }
 
+  private parseAspectRatio() {
+    const ratio = this.getAttribute('aspect-ratio');
+    if (ratio) {
+      const [w, h] = ratio.split('/').map(Number);
+      if (w && h) {
+        this.aspectRatio = w / h;
+      }
+    }
+  }
+
+  /**
+   * 标准化 max-width 值：纯数字默认转为 px
+   * "500" -> "500px", "100%" -> "100%", "800px" -> "800px"
+   */
+  private normalizeMaxWidth(value: string | null): string {
+    if (!value) return '100%';
+    // 如果是纯数字（整数或小数），添加 px 单位
+    if (/^\d+(\.\d+)?$/.test(value.trim())) {
+      return `${value}px`;
+    }
+    return value;
+  }
+
+  private getMinHeight(): string {
+    const rawMaxWidth = this.getAttribute('max-width');
+    const maxWidth = this.normalizeMaxWidth(rawMaxWidth);
+    
+    // 如果是百分比，使用视口宽度计算最小高度
+    if (maxWidth.endsWith('%')) {
+      const percent = parseFloat(maxWidth) / 100;
+      const vwHeight = (100 * percent) / this.aspectRatio;
+      return `min(${vwHeight}vw, ${300 / this.aspectRatio}px)`; // 设置上限防止过大
+    }
+    
+    // 如果是 px 或其他单位，直接计算
+    if (maxWidth.endsWith('px')) {
+      const width = parseFloat(maxWidth);
+      return `${width / this.aspectRatio}px`;
+    }
+    
+    // 默认使用 vw 计算，确保有最小高度
+    return `${100 / this.aspectRatio}vw`;
+  }
+
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue) return;
 
@@ -52,6 +98,11 @@ class BBImg extends HTMLElement {
         break;
       case 'max-width':
         this.updateMaxWidth(newValue);
+        this.updateMinHeight();
+        break;
+      case 'aspect-ratio':
+        this.parseAspectRatio();
+        this.updateAspectRatio();
         break;
     }
   }
@@ -64,11 +115,27 @@ class BBImg extends HTMLElement {
   }
 
   private updateMaxWidth(value: string | null) {
-    const maxWidth = value || '100%';
+    const maxWidth = this.normalizeMaxWidth(value);
     this.style.maxWidth = maxWidth;
     const container = this.container;
     if (container) {
       container.style.maxWidth = maxWidth;
+    }
+  }
+
+  private updateMinHeight() {
+    const container = this.container;
+    if (container) {
+      const minHeight = this.getMinHeight();
+      container.style.minHeight = minHeight;
+    }
+  }
+
+  private updateAspectRatio() {
+    const container = this.container;
+    if (container) {
+      container.style.aspectRatio = `${this.aspectRatio}`;
+      this.updateMinHeight();
     }
   }
 
@@ -98,7 +165,9 @@ class BBImg extends HTMLElement {
   render() {
     const alt = this.getAttribute('alt') || '';
     const placeholderColor = this.getAttribute('placeholder') || '#f5f5f5';
-    const maxWidth = this.getAttribute('max-width') || '100%';
+    const rawMaxWidth = this.getAttribute('max-width');
+    const maxWidth = this.normalizeMaxWidth(rawMaxWidth);
+    const minHeight = this.getMinHeight();
 
     this.style.maxWidth = maxWidth;
     this.style.display = 'block';
@@ -117,7 +186,8 @@ class BBImg extends HTMLElement {
           position: relative;
           width: 100%;
           max-width: ${maxWidth};
-          aspect-ratio: 3/2;
+          aspect-ratio: ${this.aspectRatio};
+          min-height: ${minHeight}; /* 关键修复：确保加载前高度不为0 */
           background-color: ${placeholderColor};
           overflow: hidden;
           margin: 0 auto;
@@ -257,9 +327,6 @@ class BBImg extends HTMLElement {
         // 静默失败，继续显示
       }
 
-      // 添加一个小延迟，让过渡更自然（可选，如觉得不需要可删除）
-      // await new Promise(r => setTimeout(r, 50));
-      
       this.img!.classList.add('loaded');
       this.container?.classList.add('loaded');
     };
