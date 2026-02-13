@@ -53,22 +53,18 @@ class BBImg extends HTMLElement {
       case 'max-width':
         this.updateMaxWidth(newValue);
         break;
-      case 'root-margin':
-        // 仅影响下次懒加载初始化，无需立即处理
-        break;
     }
   }
 
   private updatePlaceholderColor(color: string | null) {
     const container = this.container;
     if (container && !this.isLoaded) {
-      container.style.backgroundColor = color || '#dfdfdf';
+      container.style.backgroundColor = color || '#f5f5f5';
     }
   }
 
   private updateMaxWidth(value: string | null) {
     const maxWidth = value || '100%';
-    // 更新 host 和 container 的 max-width
     this.style.maxWidth = maxWidth;
     const container = this.container;
     if (container) {
@@ -87,7 +83,11 @@ class BBImg extends HTMLElement {
       this.img.removeAttribute('src');
     }
 
-    this.container?.classList.remove('loaded');
+    const container = this.container;
+    if (container) {
+      container.classList.remove('loaded');
+      container.style.backgroundColor = this.getAttribute('placeholder') || '#f5f5f5';
+    }
 
     if (this.observer) {
       this.observer.disconnect();
@@ -97,11 +97,9 @@ class BBImg extends HTMLElement {
 
   render() {
     const alt = this.getAttribute('alt') || '';
-    const placeholderColor = this.getAttribute('placeholder') || '#dfdfdf';
+    const placeholderColor = this.getAttribute('placeholder') || '#f5f5f5';
     const maxWidth = this.getAttribute('max-width') || '100%';
-    const rootMargin = this.getAttribute('root-margin') || '50px';
 
-    // 应用 max-width 到 host
     this.style.maxWidth = maxWidth;
     this.style.display = 'block';
 
@@ -112,8 +110,9 @@ class BBImg extends HTMLElement {
           position: relative;
           width: 100%;
           max-width: ${maxWidth};
-          margin: 0 auto; /* 居中显示 */
+          margin: 0 auto;
         }
+        
         .container {
           position: relative;
           width: 100%;
@@ -122,9 +121,12 @@ class BBImg extends HTMLElement {
           background-color: ${placeholderColor};
           overflow: hidden;
           margin: 0 auto;
+          /* 极淡的骨架屏：几乎不可察觉 */
+          transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* 骨架屏脉冲动画 */
-        .container:not(.loaded)::after {
+        
+        /* 极简骨架屏：极淡的呼吸感 */
+        .container:not(.loaded)::before {
           content: '';
           position: absolute;
           top: 0;
@@ -134,45 +136,68 @@ class BBImg extends HTMLElement {
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.4) 50%,
+            rgba(128, 128, 128, 0.03) 50%,
             transparent 100%
           );
           transform: translateX(-100%);
-          animation: shimmer 1.5s infinite;
+          animation: breathe 3s ease-in-out infinite;
         }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
+        
+        @keyframes breathe {
+          0%, 100% { 
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          50% { 
+            transform: translateX(100%);
+            opacity: 1;
+          }
         }
+        
         .container.loaded {
           background-color: transparent;
         }
-        .container.loaded::after {
-          display: none;
+        
+        .container.loaded::before {
+          animation: none;
+          opacity: 0;
+          transition: opacity 0.6s ease;
         }
+        
         img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           opacity: 0;
-          transition: opacity 0.3s ease-in-out;
+          /* 更长的过渡时间，更自然的缓动 */
+          transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+                      transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+          transform: scale(1.02);
+          will-change: opacity, transform;
           decoding: async;
         }
+        
         img.loaded {
           opacity: 1;
+          transform: scale(1);
         }
+        
+        /* 极简错误状态 */
         .error {
           display: flex;
           align-items: center;
           justify-content: center;
           width: 100%;
           height: 100%;
-          color: #999;
-          font-size: 14px;
+          color: #ccc;
+          font-size: 13px;
+          letter-spacing: 0.05em;
         }
+        
         .error-icon {
-          width: 48px;
-          height: 48px;
-          opacity: 0.5;
+          width: 32px;
+          height: 32px;
+          opacity: 0.3;
         }
       </style>
       <div class="container">
@@ -229,9 +254,12 @@ class BBImg extends HTMLElement {
           await this.img!.decode();
         }
       } catch {
-        // decode 失败继续显示
+        // 静默失败，继续显示
       }
 
+      // 添加一个小延迟，让过渡更自然（可选，如觉得不需要可删除）
+      // await new Promise(r => setTimeout(r, 50));
+      
       this.img!.classList.add('loaded');
       this.container?.classList.add('loaded');
     };
@@ -251,8 +279,8 @@ class BBImg extends HTMLElement {
 
     container.innerHTML = `
       <div class="error">
-        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" 
             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       </div>
