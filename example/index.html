@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BB-IMG Demo - Lazy Loading Image Component</title>
+  <script src="../dist/index.js" type="module"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .intro {
+      color: #666;
+      margin-bottom: 40px;
+    }
+    .demo-section {
+      margin-bottom: 60px;
+    }
+    .demo-section h2 {
+      color: #444;
+      margin-bottom: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .single-image {
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    .info {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .info h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .info code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    .spacer {
+      height: 1500px;
+      background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 18px;
+      margin: 40px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ BB-IMG Demo</h1>
+    <p class="intro">
+      A lightweight, lazy-loading image web component with automatic placeholder.
+    </p>
+
+    <div class="info">
+      <h3>Features</h3>
+      <ul>
+        <li>✨ Lazy loading by default using IntersectionObserver</li>
+        <li>🎨 Light gray placeholder with 2:3 aspect ratio</li>
+        <li>🔄 Smooth fade-in transition</li>
+        <li>📦 Minimal and lightweight</li>
+        <li>🚀 Easy to use: <code>&lt;bb-img src="image.jpg"&gt;&lt;/bb-img&gt;</code></li>
+      </ul>
+    </div>
+
+    <div class="demo-section">
+      <h2>Single Image Example</h2>
+      <div class="single-image">
+        <bb-img src="https://picsum.photos/400/600?random=1"></bb-img>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Grid Layout Example</h2>
+      <div class="grid">
+        <bb-img src="https://picsum.photos/300/450?random=2"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=3"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=4"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=5"></bb-img>
+      </div>
+    </div>
+
+    <div class="spacer">
+      👇 Scroll down to see lazy loading in action 👇
+    </div>
+
+    <div class="demo-section">
+      <h2>Lazy Loading Demo (Below the Fold)</h2>
+      <p>These images will only load when you scroll them into view:</p>
+      <div class="grid">
+        <bb-img src="https://picsum.photos/300/450?random=6"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=7"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=8"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=9"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=10"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=11"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=12"></bb-img>
+        <bb-img src="https://picsum.photos/300/450?random=13"></bb-img>
+      </div>
+    </div>
+
+    <div class="info">
+      <h3>Installation</h3>
+      <p>Install via npm:</p>
+      <pre><code>npm install @bbki.ng/bbimg</code></pre>
+      <p>Or use via CDN:</p>
+      <pre><code>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/@bbki.ng/bbimg@latest/dist/index.js"&gt;&lt;/script&gt;</code></pre>
+    </div>
+
+    <div class="info">
+      <h3>Usage</h3>
+      <pre><code>&lt;bb-img src="path/to/image.jpg"&gt;&lt;/bb-img&gt;</code></pre>
+    </div>
+  </div>
+</body>
+</html>
