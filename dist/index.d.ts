@@ -1,5 +1,6 @@
 declare class BBImg extends HTMLElement {
     private observer;
+    private resizeObserver;
     private img;
     private isLoaded;
     private loadId;
@@ -13,14 +14,23 @@ declare class BBImg extends HTMLElement {
     private parseAspectRatio;
     /**
      * 标准化 max-width 值：纯数字默认转为 px
-     * "500" -> "500px", "100%" -> "100%", "800px" -> "800px"
      */
     private normalizeMaxWidth;
-    private getMinHeight;
+    /**
+     * 根据实际容器宽度计算最小高度
+     */
+    private calculateMinHeight;
+    /**
+     * 更新容器的 min-height 基于实际渲染宽度
+     */
+    private updateMinHeight;
+    /**
+     * 设置 ResizeObserver 监听容器宽度变化
+     */
+    private setupResizeObserver;
     attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
     private updatePlaceholderColor;
     private updateMaxWidth;
-    private updateMinHeight;
     private updateAspectRatio;
     private resetAndLoad;
     render(): void;
