@@ -1,0 +1,25 @@
+{
+  "name": "@bbki.ng/bbimg",
+  "version": "0.0.1",
+  "description": "A lazy-loading image web component",
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "author": "bbbottle <b@bbki.ng>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bbb0ttle/bb-img"
+  },
+  "scripts": {
+    "start": "tsc -w",
+    "prepare": "tsc -d && terser dist/index.js --compress --mangle -o dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "terser": "^5.19.2",
+    "typescript": "^5.2.2"
+  }
+}
